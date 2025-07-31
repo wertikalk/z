@@ -114,6 +114,9 @@ module z_aptos::Resolver_tests {
             0x15d87951228b5f5de52a2ca404622c9ebd06d662f0d74395f366c4239abaf67a;
         let hashed_secret: u256 = Resolver::hash_message(bcs::to_bytes(&secret));
 
+        debug::print(&secret);
+        debug::print(&hashed_secret);
+
         // Resolver side
         // --------------> Maker has sent only the `hashed_secret` to the resolver.
         Resolver::create_escrow<AptosCoin>(
