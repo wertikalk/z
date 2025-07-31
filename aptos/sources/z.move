@@ -19,7 +19,7 @@ module z_aptos::Resolver {
     /// Map from `key_hash` => `Escrow`.
     struct AllEscrows<phantom CoinType> has key {
         // Where `key_hash` == `hash(maker, hash(secret))`.
-        locks: Table<u256, Escrow<CoinType>>,
+        escrows: Table<u256, Escrow<CoinType>>,
         // Resolver's withdrawal address.
         withdrawal_address: address,
         // Number of `Escrow`s that have not yet been resolved.
@@ -32,8 +32,10 @@ module z_aptos::Resolver {
     const E_ESCROW_ALREADY_EXISTS: u64 = 2;
     /// `Resolver` account has not been initialized to create `Escrows` for the specified `CoinType`.
     const E_RESOLVER_ACCOUNT_NOT_INITIALIZED: u64 = 3;
+    /// Cannot cancel and withdraw from `Escrow` until the `unlock_time_secs` has passed.
+    const E_CANCEL_ESCROW_CANNOT_YET_HAPPEN: u64 = 5;
     /// DBG: Invalid `secret` provided does not match the expected `hashed_secret` value.
-    const E_DBG_INVALID_SECRET_TO_HASHED: u64 = 4;
+    const E_DBG_INVALID_SECRET_TO_HASHED: u64 = 6;
 
     /// Initialize the `Resolver` account for a specific `CoinType`.
     public entry fun initialize_resolver<CoinType>(
@@ -42,7 +44,7 @@ module z_aptos::Resolver {
         move_to(
             resolver,
             AllEscrows<CoinType> {
-                locks: table::new<u256, Escrow<CoinType>>(),
+                escrows: table::new<u256, Escrow<CoinType>>(),
                 withdrawal_address,
                 total_active_escrows: 0
             }
@@ -73,25 +75,25 @@ module z_aptos::Resolver {
         let key_hash: u256 = hash_message(concanated_vec);
 
         let coins = coin::withdraw<CoinType>(resolver, amount);
-        let locks = borrow_global_mut<AllEscrows<CoinType>>(resolver_address);
+        let escrows = borrow_global_mut<AllEscrows<CoinType>>(resolver_address);
 
         assert!(
-            !table::contains(&locks.locks, key_hash),
+            !table::contains(&escrows.escrows, key_hash),
             error::already_exists(E_ESCROW_ALREADY_EXISTS)
         );
         table::add(
-            &mut locks.locks,
+            &mut escrows.escrows,
             key_hash,
             Escrow<CoinType> { coins, unlock_time_secs }
         );
-        locks.total_active_escrows = locks.total_active_escrows + 1;
+        escrows.total_active_escrows = escrows.total_active_escrows + 1;
     }
 
     /// Release the funds from the `Escrow` using the `secret`.
     public entry fun release_funds<CoinType>(
         resolver: &signer, maker: address, secret: u256
     ) acquires AllEscrows {
-        
+
         let resolver_address = assert_resolver_initialized<CoinType>(resolver);
 
         let maker_vec = bcs::to_bytes(&maker);
@@ -101,16 +103,52 @@ module z_aptos::Resolver {
 
         let key_hash = hash_message(concanated_vec);
 
-        let locks = borrow_global_mut<AllEscrows<CoinType>>(resolver_address);
+        let escrows = borrow_global_mut<AllEscrows<CoinType>>(resolver_address);
         assert!(
-            table::contains(&locks.locks, key_hash),
+            table::contains(&escrows.escrows, key_hash),
             error::not_found(E_ESCROW_NOT_FOUND)
         );
 
-        let Escrow { coins, unlock_time_secs } = table::remove(
-            &mut locks.locks, key_hash
+        let Escrow { coins, unlock_time_secs } =
+            table::remove(&mut escrows.escrows, key_hash);
+        escrows.total_active_escrows = escrows.total_active_escrows - 1;
+
+        coin::deposit(maker, coins);
+    }
+
+    /// Release the funds from the `Escrow` using the `secret`.
+    public entry fun cancel_escrow_and_withdraw<CoinType>(
+        anyone: &signer,
+        resolver_address: address,
+        maker: address,
+        secret: u256
+    ) acquires AllEscrows {
+
+        let maker_vec = bcs::to_bytes(&maker);
+        let hashed_secret = hash_message(bcs::to_bytes(&secret));
+        let concanated_vec = bcs::to_bytes(&hashed_secret);
+        vector::append(&mut concanated_vec, maker_vec);
+
+        let key_hash = hash_message(concanated_vec);
+
+        let escrows = borrow_global_mut<AllEscrows<CoinType>>(resolver_address);
+
+        // Ensure the `Escrow` exists
+        assert!(
+            table::contains(&escrows.escrows, key_hash),
+            error::not_found(E_ESCROW_NOT_FOUND)
         );
-        locks.total_active_escrows = locks.total_active_escrows - 1;
+
+        let Escrow { coins, unlock_time_secs } =
+            table::remove(&mut escrows.escrows, key_hash);
+
+        // Ensure the unlock time has passed
+        assert!(
+            timestamp::now_seconds() >= unlock_time_secs,
+            error::invalid_state(E_CANCEL_ESCROW_CANNOT_YET_HAPPEN)
+        );
+
+        escrows.total_active_escrows = escrows.total_active_escrows - 1;
 
         coin::deposit(maker, coins);
     }
@@ -155,7 +193,7 @@ module z_aptos::Resolver {
         let maker_addr = signer::address_of(maker);
         aptos_account::create_account(maker_addr);
 
-        //  Maker side
+        // Maker side
         let secret: u256 =
             0x15d87951228b5f5de52a2ca404622c9ebd06d662f0d74395f366c4239abaf67a;
         // debug::print(&secret);
@@ -174,6 +212,84 @@ module z_aptos::Resolver {
         );
         // --------------> Maker has sent the `secret` to the resolver.
         release_funds<AptosCoin>(resolver, maker_addr, secret);
+
+        // Check the balance of the maker after the release
+        assert!(coin::balance<AptosCoin>(maker_addr) == 1000, 0);
+
+        // Clean up
+        coin::destroy_burn_cap(burn_cap);
+    }
+
+    #[test(aptos_framework = @0x1, resolver = @0x123, maker = @0x234)]
+    #[expected_failure(abort_code = 196613, location = Self)]
+    public entry fun test_invalid_cancel_and_withdraw_flow(
+        aptos_framework: &signer, resolver: &signer, maker: &signer
+    ) acquires AllEscrows {
+        let burn_cap = basic_test_setup(aptos_framework, resolver);
+
+        let resolver_address = signer::address_of(resolver);
+        initialize_resolver<AptosCoin>(resolver, resolver_address);
+
+        let maker_addr = signer::address_of(maker);
+        aptos_account::create_account(maker_addr);
+
+        // Maker side
+        let secret: u256 =
+            0x15d87951228b5f5de52a2ca404622c9ebd06d662f0d74395f366c4239abaf67a;
+        let hashed_secret: u256 = hash_message(bcs::to_bytes(&secret));
+
+        // Resolver side
+        // --------------> Maker has sent only the `hashed_secret` to the resolver.
+        create_escrow<AptosCoin>(
+            resolver,
+            maker_addr,
+            hashed_secret,
+            secret,
+            1000,
+            1000
+        );
+
+        // ! ---> Maker has changed their mind and wants to cancel the escrow.
+        cancel_escrow_and_withdraw<AptosCoin>(maker, resolver_address, maker_addr, secret);
+
+        // Clean up
+        coin::destroy_burn_cap(burn_cap);
+    }
+
+    #[test(aptos_framework = @0x1, resolver = @0x123, maker = @0x234)]
+    public entry fun test_valid_cancel_and_withdraw_flow(
+        aptos_framework: &signer, resolver: &signer, maker: &signer
+    ) acquires AllEscrows {
+        let burn_cap = basic_test_setup(aptos_framework, resolver);
+
+        let resolver_address = signer::address_of(resolver);
+        initialize_resolver<AptosCoin>(resolver, resolver_address);
+
+        let maker_addr = signer::address_of(maker);
+        aptos_account::create_account(maker_addr);
+
+        // Maker side
+        let secret: u256 =
+            0x15d87951228b5f5de52a2ca404622c9ebd06d662f0d74395f366c4239abaf67a;
+        let hashed_secret: u256 = hash_message(bcs::to_bytes(&secret));
+
+        // Resolver side
+        // --------------> Maker has sent only the `hashed_secret` to the resolver.
+        create_escrow<AptosCoin>(
+            resolver,
+            maker_addr,
+            hashed_secret,
+            secret,
+            1000,
+            1000
+        );
+
+        // ! ---> Resolver didn't receive the `secret` from the maker,
+        //        or it didn't want to honor the deal while time has expired.
+        timestamp::fast_forward_seconds(1500);
+
+        // Maker side
+        cancel_escrow_and_withdraw<AptosCoin>(maker, resolver_address, maker_addr, secret);
 
         // Check the balance of the maker after the release
         assert!(coin::balance<AptosCoin>(maker_addr) == 1000, 0);
