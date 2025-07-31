@@ -1,9 +1,8 @@
 import { id, Interface, JsonRpcProvider } from "ethers";
-import Sdk from "@1inch/cross-chain-sdk";
-import EscrowFactoryContract from "../../dist/contracts/EscrowFactory.sol/EscrowFactory.json";
-
+import * as Sdk from "../cross-chain-sdk/src/index.js";
+import * as EscrowFactoryContract from "../artifacts/EscrowFactory.js";
 export class EscrowFactory {
-    private iface = new Interface(EscrowFactoryContract.abi);
+    private iface = new Interface((EscrowFactoryContract as any).abi);
 
     constructor(
         private readonly provider: JsonRpcProvider,

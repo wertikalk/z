@@ -6,8 +6,8 @@ import {
     TransactionRequest,
     Wallet as PKWallet,
 } from "ethers";
-import Sdk from "@1inch/cross-chain-sdk";
-import ERC20 from "../../dist/contracts/IERC20.sol/IERC20.json";
+import * as Sdk from "../cross-chain-sdk/src/index.js";
+import * as ERC20 from "../artifacts/IERC20.js";
 
 const coder = AbiCoder.defaultAbiCoder();
 
@@ -41,7 +41,7 @@ export class Wallet {
     async tokenBalance(token: string): Promise<bigint> {
         const tokenContract = new Contract(
             token.toString(),
-            ERC20.abi,
+            (ERC20 as any).abi,
             this.provider
         );
 
@@ -78,7 +78,7 @@ export class Wallet {
     public async getAllowance(token: string, spender: string): Promise<bigint> {
         const contract = new Contract(
             token.toString(),
-            ERC20.abi,
+            (ERC20 as any).abi,
             this.provider
         );
 

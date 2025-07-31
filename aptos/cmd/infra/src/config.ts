@@ -1,5 +1,5 @@
 import { z } from "zod";
-import Sdk from "@1inch/cross-chain-sdk";
+import * as Sdk from "./cross-chain-sdk/src/index.js";
 import * as process from "node:process";
 
 const ConfigSchema = z.object({

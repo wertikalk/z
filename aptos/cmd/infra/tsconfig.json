@@ -1,13 +1,36 @@
+// {
+//     "extends": "@1inch/tsconfig",
+//     "compilerOptions": {
+//         "module": "ESNext",
+//         "moduleResolution": "Bundler",
+//         "moduleDetection": "auto",
+//         "outDir": "./dist-infra",
+//         "lib": ["ESNext"],
+//         "target": "ES2023",
+//         "removeComments": false,
+//         "resolveJsonModule": true,
+//         "esModuleInterop": true
+//     },
+//     "include": ["./src"]
+// }
+
 {
     "extends": "@1inch/tsconfig",
     "compilerOptions": {
-        "module": "ESNext",
-        "moduleResolution": "Bundler",
-        "moduleDetection": "auto",
+        "target": "ES2021",
+        "lib": ["ES2021"],
+        "module": "NodeNext",
+        "moduleResolution": "NodeNext",
+        "strict": true,
+        "esModuleInterop": true,
         "outDir": "./dist-infra",
-        "lib": ["ESNext"],
-        "target": "ES2023",
-        "removeComments": false
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true,
+        "resolveJsonModule": true,
+        "removeComments": false,
+        "baseUrl": "./src"
+        // "noUnusedLocals": false,
+        // "noUnusedParameters": false
     },
-    "include": ["./src"]
+    "include": ["./src/**/*.ts", "./src/**/*.json"]
 }

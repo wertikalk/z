@@ -1,9 +1,9 @@
 import { Interface, Signature, TransactionRequest } from "ethers";
-import Sdk from "@1inch/cross-chain-sdk";
-import Contract from "../../dist/contracts/Resolver.sol/Resolver.json";
+import * as Sdk from "../cross-chain-sdk/src/index.js";
+import * as Contract from "../artifacts/Resolver.js";
 
 export class Resolver {
-    private readonly iface = new Interface(Contract.abi);
+    private readonly iface = new Interface((Contract as any).abi);
 
     constructor(
         public readonly srcAddress: string,

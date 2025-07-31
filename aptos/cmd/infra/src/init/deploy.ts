@@ -1,15 +1,15 @@
 import "dotenv/config";
 
-import Sdk from "@1inch/cross-chain-sdk";
+import * as Sdk from "../cross-chain-sdk/src/index.js";
 import {
     computeAddress,
     ContractFactory,
     JsonRpcProvider,
     Wallet as SignerWallet,
 } from "ethers";
-import { ChainConfig } from "../config";
-import factoryContract from "../../dist/contracts/TestEscrowFactory.sol/TestEscrowFactory.json";
-import resolverContract from "../../dist/contracts/Resolver.sol/Resolver.json";
+import { ChainConfig } from "../config.js";
+import * as factoryContract from "../artifacts/TestEscrowFactory.js";
+import * as resolverContract from "../artifacts/Resolver.js";
 
 const { Address } = Sdk;
 
@@ -60,7 +60,7 @@ export const initEthereum = async (
 };
 
 export const deploy = async (
-    json: { abi: any; bytecode: any },
+    json: any,
     params: unknown[],
     deployer: SignerWallet
 ): Promise<string> => {
