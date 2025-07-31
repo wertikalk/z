@@ -1,0 +1,13 @@
+{
+    "extends": "@1inch/tsconfig",
+    "compilerOptions": {
+        "module": "ESNext",
+        "moduleResolution": "Bundler",
+        "moduleDetection": "auto",
+        "outDir": "./dist-infra",
+        "lib": ["ESNext"],
+        "target": "ES2023",
+        "removeComments": false
+    },
+    "include": ["./src"]
+}

@@ -1,0 +1,32 @@
+{
+    "name": "z_aptos_infra",
+    "version": "1.0.0",
+    "description": "Resolving infra needed for Aptos <-> Ethereum",
+    "author": "Wertikalk (m@wertikalk.com)",
+    "scripts": {
+        "build": "tsc",
+        "run:swap": "node dist/index.js"
+    },
+    "dependencies": {
+        "@1inch/byte-utils": "2.6.0",
+        "@1inch/cross-chain-sdk": "v0.1.15",
+        "dotenv": "16.4.5",
+        "ethers": "6.13.2",
+        "prool": "0.0.24"
+    },
+    "devDependencies": {
+        "@1inch/tsconfig": "1.0.7",
+        "@swc/core": "1.5.25",
+        "@swc/jest": "0.2.36",
+        "@types/jest": "29.5.12",
+        "@types/node": "^22.16.0",
+        "typescript": "5.5.2",
+        "zod": "3.23.8"
+    },
+    "engines": {
+        "node": ">=22"
+    },
+    "volta": {
+        "node": "22.5.1"
+    }
+}
