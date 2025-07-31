@@ -58,9 +58,7 @@ module z_aptos::Resolver {
         amount: u64,
         unlock_time_secs: u64
     ) acquires AllEscrows {
-        assert_resolver_initialized<CoinType>(resolver);
-
-        let resolver_address = signer::address_of(resolver);
+        let resolver_address = assert_resolver_initialized<CoinType>(resolver);
 
         let dbg_hashed_secret = hash_message(bcs::to_bytes(&dbg_secret));
         assert!(
@@ -91,23 +89,19 @@ module z_aptos::Resolver {
 
     /// Release the funds from the `Escrow` using the `secret`.
     public entry fun release_funds<CoinType>(
-        maker: &signer, resolver: address, secret: u256
+        resolver: &signer, maker: address, secret: u256
     ) acquires AllEscrows {
-        assert!(
-            exists<AllEscrows<CoinType>>(resolver),
-            error::not_found(E_RESOLVER_ACCOUNT_NOT_INITIALIZED)
-        );
+        
+        let resolver_address = assert_resolver_initialized<CoinType>(resolver);
 
-        let maker_address = signer::address_of(maker);
-
-        let maker_vec = bcs::to_bytes(&maker_address);
+        let maker_vec = bcs::to_bytes(&maker);
         let hashed_secret = hash_message(bcs::to_bytes(&secret));
         let concanated_vec = bcs::to_bytes(&hashed_secret);
         vector::append(&mut concanated_vec, maker_vec);
 
         let key_hash = hash_message(concanated_vec);
 
-        let locks = borrow_global_mut<AllEscrows<CoinType>>(resolver);
+        let locks = borrow_global_mut<AllEscrows<CoinType>>(resolver_address);
         assert!(
             table::contains(&locks.locks, key_hash),
             error::not_found(E_ESCROW_NOT_FOUND)
@@ -118,7 +112,7 @@ module z_aptos::Resolver {
         );
         locks.total_active_escrows = locks.total_active_escrows - 1;
 
-        coin::deposit(maker_address, coins);
+        coin::deposit(maker, coins);
     }
 
     public fun hash_message(bytes_vec: vector<u8>): u256 {
@@ -131,12 +125,13 @@ module z_aptos::Resolver {
         hash_val
     }
 
-    fun assert_resolver_initialized<CoinType>(resolver: &signer) {
+    fun assert_resolver_initialized<CoinType>(resolver: &signer): address {
         let resolver_address = signer::address_of(resolver);
         assert!(
             exists<AllEscrows<CoinType>>(resolver_address),
             error::not_found(E_RESOLVER_ACCOUNT_NOT_INITIALIZED)
         );
+        resolver_address
     }
 
     #[test_only]
@@ -178,7 +173,7 @@ module z_aptos::Resolver {
             1000
         );
         // --------------> Maker has sent the `secret` to the resolver.
-        release_funds<AptosCoin>(maker, resolver_address, secret);
+        release_funds<AptosCoin>(resolver, maker_addr, secret);
 
         // Check the balance of the maker after the release
         assert!(coin::balance<AptosCoin>(maker_addr) == 1000, 0);
