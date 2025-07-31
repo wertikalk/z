@@ -73,3 +73,32 @@ export const createSrcEscrow = async (
 
     return response;
 };
+
+export const claimFunds = async (
+    resolver: Account,
+    resolverAddress: AccountAddress,
+    secret: U256
+) => {
+    const createObject = await aptos.transaction.build.simple({
+        sender: resolver.accountAddress,
+        data: {
+            function: `${Z_ESCROW_MANAGER}::claim_funds`,
+            typeArguments: [APTOS_COIN],
+            functionArguments: [resolverAddress, secret],
+        },
+        options: {
+            maxGasAmount: 1000,
+            gasUnitPrice: 100,
+        },
+    });
+
+    const pendingObjectTxn = await aptos.signAndSubmitTransaction({
+        signer: resolver,
+        transaction: createObject,
+    });
+    const response = await aptos.waitForTransaction({
+        transactionHash: pendingObjectTxn.hash,
+    });
+
+    return response;
+};

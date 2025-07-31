@@ -5,7 +5,7 @@ import { ok } from "assert";
 import { keccak256 } from "ethers";
 import { Account, U256, U64, Ed25519PrivateKey } from "@aptos-labs/ts-sdk";
 
-import { createSrcEscrow } from "./utils.js";
+import { createSrcEscrow, claimFunds } from "./utils.js";
 
 const maker = Account.fromPrivateKey({
     privateKey: new Ed25519PrivateKey(
@@ -44,4 +44,8 @@ const tx = await createSrcEscrow(
     new U64(60n) // unlock time
 );
 
-console.log(tx);
+console.log("Create Escrow Transaction:", tx);
+
+const claimTx = await claimFunds(maker, maker.accountAddress, secret);
+
+console.log("Claim Transaction:", claimTx);
