@@ -8,12 +8,12 @@ import {
     Wallet as SignerWallet,
 } from "ethers";
 import { ChainConfig } from "../config.js";
-import * as factoryContract from "../artifacts/TestEscrowFactory.js";
+import * as factoryContract from "../artifacts/EscrowFactory.js";
 import * as resolverContract from "../artifacts/Resolver.js";
 
 const { Address } = Sdk;
 
-export const initEthereum = async (
+export const initEVM = async (
     cnf: ChainConfig,
     resolverPk: string
 ): Promise<{
@@ -23,19 +23,22 @@ export const initEthereum = async (
 }> => {
     const provider = new JsonRpcProvider(cnf.url);
 
-    const deployer = new SignerWallet(cnf.ownerPrivateKey, provider);
+    const deployer = new SignerWallet(resolverPk, provider);
+
+    const values = [
+        cnf.limitOrderProtocol,
+        cnf.wrappedNative, // feeToken,
+        Address.fromBigInt(0n).toString(), // accessToken,
+        await deployer.getAddress(), // owner
+        60 * 30, // src rescue delay
+        60 * 30, // dst rescue delay
+    ];
+    console.log(values);
 
     // deploy EscrowFactory
     const escrowFactory = await deploy(
-        factoryContract,
-        [
-            cnf.limitOrderProtocol,
-            cnf.wrappedNative, // feeToken,
-            Address.fromBigInt(0n).toString(), // accessToken,
-            deployer.address, // owner
-            60 * 30, // src rescue delay
-            60 * 30, // dst rescue delay
-        ],
+        factoryContract.ARTIFACT,
+        values,
         deployer
     );
     console.log(
@@ -46,7 +49,7 @@ export const initEthereum = async (
 
     // deploy Resolver contract
     const resolver = await deploy(
-        resolverContract,
+        resolverContract.ARTIFACT,
         [
             escrowFactory,
             cnf.limitOrderProtocol,

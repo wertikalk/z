@@ -5,6 +5,8 @@ pragma solidity 0.8.23;
 import {Ownable} from "openzeppelin-contracts/contracts/access/Ownable.sol";
 
 import {IOrderMixin} from "limit-order-protocol/contracts/interfaces/IOrderMixin.sol";
+import {IPostInteraction} from "limit-order-protocol/contracts/interfaces/IPostInteraction.sol";
+
 import {TakerTraits} from "limit-order-protocol/contracts/libraries/TakerTraitsLib.sol";
 
 import {IResolverExample} from "../lib/cross-chain-swap/contracts/interfaces/IResolverExample.sol";
@@ -24,7 +26,7 @@ import {ImmutablesLib} from "../lib/cross-chain-swap/contracts/libraries/Immutab
  *
  * @custom:security-contact security@1inch.io
  */
-contract Resolver is Ownable {
+contract Resolver is Ownable, IPostInteraction {
     using ImmutablesLib for IBaseEscrow.Immutables;
     using TimelocksLib for Timelocks;
 
@@ -94,5 +96,18 @@ contract Resolver is Ownable {
             (bool success,) = targets[i].call(arguments[i]);
             if (!success) RevertReasonForwarder.reRevert();
         }
+    }
+
+    function postInteraction(
+        IOrderMixin.Order calldata order,
+        bytes calldata extension,
+        bytes32 orderHash,
+        address taker,
+        uint256 makingAmount,
+        uint256 takingAmount,
+        uint256 remainingMakingAmount,
+        bytes calldata extraData
+    ) external override {
+        // do nothing...
     }
 }

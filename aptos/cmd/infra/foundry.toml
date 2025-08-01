@@ -11,3 +11,6 @@ eth-rpc-url = 'http://localhost:8545'
 fs_permissions = [{ access = "read", path = "dist/contracts" }, { access = "read-write", path = ".forge-snapshots/" }]
 
 extra_output = ['storageLayout']
+
+[etherscan]
+polygon = { key = "${ETHERSCAN_API_KEY}" }

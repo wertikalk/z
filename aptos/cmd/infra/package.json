@@ -7,7 +7,8 @@
     "scripts": {
         "build": "tsc",
         "run:swap": "pnpm build && node dist-infra/init/deploy.js",
-        "run:swap:aptos-to-ethereum:native-to-token": "pnpm build && node dist-infra/swap/aptos-to-ethereum/native-to-token.js"
+        "run:swap:aptos-to-ethereum:native-to-token": "pnpm build && node dist-infra/swap/aptos-to-ethereum/native-to-token.js",
+        "run:swap:polygon-to-aptos:token-to-token": "pnpm build && node dist-infra/swap/polygon-to-aptos/token-to-token.js"
     },
     "dependencies": {
         "@1inch/byte-utils": "2.6.0",

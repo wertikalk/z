@@ -41,7 +41,7 @@ export class Wallet {
     async tokenBalance(token: string): Promise<bigint> {
         const tokenContract = new Contract(
             token.toString(),
-            (ERC20 as any).abi,
+            (ERC20.ARTIFACT as any).abi,
             this.provider
         );
 
@@ -78,7 +78,7 @@ export class Wallet {
     public async getAllowance(token: string, spender: string): Promise<bigint> {
         const contract = new Contract(
             token.toString(),
-            (ERC20 as any).abi,
+            (ERC20.ARTIFACT as any).abi,
             this.provider
         );
 
@@ -131,8 +131,14 @@ export class Wallet {
 
     public async signOrder(
         srcChainId: number,
-        order: Sdk.CrossChainOrder
+        order: Sdk.CrossChainOrder,
+        isAptos: boolean = false
     ): Promise<string> {
+        if (isAptos) {
+            throw new Error(
+                "ERR: [Aptos] User doesn't need to sign anything - Escrow should be already created!"
+            );
+        }
         const typedData = order.getTypedData(srcChainId);
 
         return this.signer.signTypedData(
@@ -150,13 +156,15 @@ export class Wallet {
             gasLimit: 10_000_000,
             from: this.getAddress(),
         });
-        const receipt = await res.wait(1);
+        const receipt = await res.wait(2);
+
+        // console.log({ receipt });
 
         if (receipt && receipt.status) {
             return {
                 txHash: receipt.hash,
                 blockTimestamp: BigInt((await res.getBlock())!.timestamp),
-                blockHash: res.blockHash as string,
+                blockHash: receipt.blockHash,
             };
         }
 

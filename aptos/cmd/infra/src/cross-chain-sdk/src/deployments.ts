@@ -4,6 +4,8 @@ const TrueERC20 = new Address("0xda0000d4000015a526378bb6fafc650cea5966f8");
 
 export const TRUE_ERC20 = {
     [NetworkEnum.ETHEREUM]: TrueERC20,
+    [NetworkEnum.COINBASE]: TrueERC20,
+    [NetworkEnum.POLYGON]: TrueERC20,
 };
 
 const ESCROW_FACTORY_ADDRESS = new Address(

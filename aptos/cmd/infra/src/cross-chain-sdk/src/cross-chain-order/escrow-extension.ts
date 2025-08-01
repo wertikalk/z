@@ -51,9 +51,10 @@ export class EscrowExtension extends FusionExtension {
 
         super(address, auctionDetails, postInteractionData, makerPermit);
 
-        if (this.dstToken.isZero()) {
-            this.dstToken = Address.NATIVE_CURRENCY;
-        }
+        // TODO: aptos address format check!!!
+        // if (this.dstToken.isZero()) {
+        //     this.dstToken = Address.NATIVE_CURRENCY;
+        // }
     }
 
     /**

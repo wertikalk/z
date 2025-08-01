@@ -2,14 +2,19 @@ import { id, Interface, JsonRpcProvider } from "ethers";
 import * as Sdk from "../cross-chain-sdk/src/index.js";
 import * as EscrowFactoryContract from "../artifacts/EscrowFactory.js";
 export class EscrowFactory {
-    private iface = new Interface((EscrowFactoryContract as any).abi);
+    private iface = new Interface((EscrowFactoryContract.ARTIFACT as any).abi);
 
     constructor(
-        private readonly provider: JsonRpcProvider,
-        private readonly address: string
+        private readonly provider: JsonRpcProvider | any,
+        private readonly address: string | any,
+        private readonly isAptos: boolean = false
     ) {}
 
-    public async getSourceImpl(): Promise<Sdk.Address> {
+    public async getSourceImpl(): Promise<Sdk.Address | any> {
+        if (this.isAptos) {
+            return "---aptos";
+        }
+
         return Sdk.Address.fromBigInt(
             BigInt(
                 await this.provider.call({
@@ -20,7 +25,11 @@ export class EscrowFactory {
         );
     }
 
-    public async getDestinationImpl(): Promise<Sdk.Address> {
+    public async getDestinationImpl(): Promise<Sdk.Address | any> {
+        if (this.isAptos) {
+            return "---aptos";
+        }
+
         return Sdk.Address.fromBigInt(
             BigInt(
                 await this.provider.call({
@@ -41,7 +50,7 @@ export class EscrowFactory {
             topics: [event.topicHash],
         });
 
-        const [data] = logs.map((l) =>
+        const [data] = logs.map((l: any) =>
             this.iface.decodeEventLog(event, l.data)
         );
 
