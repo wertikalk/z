@@ -154,7 +154,10 @@ module z_aptos::Resolver {
     }
 
     public fun hash_message(bytes_vec: vector<u8>): u256 {
-        let hash_vec: vector<u8> = keccak256(bytes_vec);
+        let reversed_vec: vector<u8> = vector::empty();
+        vector::reverse_append(&mut reversed_vec, bytes_vec);
+
+        let hash_vec: vector<u8> = keccak256(reversed_vec);
         let hash_val: u256 = 0;
         for (i in 1..(vector::length(&hash_vec) + 1)) {
             let byte: u256 = *vector::borrow(&hash_vec, i - 1) as u256;

@@ -93,25 +93,36 @@ console.log("[Init] Escrow Factory", escrowFactory);
 // const secretBytes = randomBytes(32);
 
 const secret =
-    "0x" +
-    BigInt(
-        "0x15d87951228b5f5de52a2ca404622c9ebd06d662f0d74395f366c4239abaf67a"
-    ).toString(16);
+    "0x15d87951228b5f5de52a2ca404622c9ebd06d662f0d74395f366c4239abaf67a";
 // const secret = uint8ArrayToHex(secretBytes); // note: use crypto secure random number in real world
+
+ok(secret.length === 66, "Secret should be 32 bytes long!" + secret.length);
+
 const hashLock = Sdk.HashLock.forSingleFill(secret);
 
-const secretAptos = new U256(BigInt(secret));
+const adaptSecretToAptos = (secret: string): U256 => {
+    const _secret = secret.replace("0x", "");
+    let _correctSecret = "";
+    for (let i = 0; i < 64; i += 2) {
+        _correctSecret = _secret[i] + _secret[i + 1] + _correctSecret;
+    }
+
+    _correctSecret = "0x" + _correctSecret;
+
+    const secretBigInt = BigInt(_correctSecret);
+    return new U256(secretBigInt);
+};
+
+const secretAptos = adaptSecretToAptos(secret);
 const hashedSecret = keccak256(secretAptos.bcsToBytes());
 
-console.log("[Init] Secret EVM", BigInt(secret));
-console.log("[Init] HashLock EVM", BigInt(hashLock.toString()));
-console.log("[Init] Expected Hash APTOS", BigInt(hashedSecret));
+console.log("[Init] Secret EVM", secret);
+console.log("[Init] Secret APTOS", secretAptos.toString());
+console.log("[Init] HashLock EVM", hashLock.toString());
+console.log("[Init] Expected Hash APTOS", hashedSecret);
+console.log("ALL gud:", hashedSecret === hashLock.toString());
 
 process.exit(1);
-
-// console.log({ secret, hashLock }, hashLock.toString());
-
-// process.exit(1);
 // ------> Approves token to 1inch's LOP
 await user.POLYGON.approveToken(
     INPUT_TOKEN.address,
@@ -197,11 +208,11 @@ console.log(
     txRequestObject0
 );
 
-await new Promise((resolve) => setTimeout(resolve, 10000));
-
 const { txHash: orderFillHash, blockHash: srcDeployBlock } = await resolver[
     SRC
 ].send(txRequestObject0);
+
+process.exit(1);
 
 await new Promise((resolve) => setTimeout(resolve, 10000));
 
