@@ -1,4 +1,4 @@
-module z_aptos::Resolver {
+module z_aptos_tmp::Resolver {
     use aptos_framework::coin::{Self, Coin};
     use aptos_framework::timestamp;
     use aptos_std::table::{Self, Table};

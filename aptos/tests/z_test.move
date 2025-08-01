@@ -1,5 +1,5 @@
 #[test_only]
-module z_aptos::Resolver_tests {
+module z_aptos_tmp::Resolver_tests {
     use aptos_framework::coin::{Self, Coin};
     use aptos_framework::timestamp;
     use aptos_std::table::{Self, Table};
@@ -9,7 +9,7 @@ module z_aptos::Resolver_tests {
     use std::bcs;
     use std::debug;
 
-    use z_aptos::Resolver;
+    use z_aptos_tmp::Resolver;
 
     #[test_only]
     use aptos_framework::account;

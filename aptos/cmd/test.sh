@@ -1,1 +1,1 @@
-aptos move test --named-addresses z_aptos=default
+aptos move test --named-addresses z_aptos_tmp=default

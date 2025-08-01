@@ -1,1 +1,1 @@
-aptos move publish --named-addresses z_aptos=default  
+aptos move publish --named-addresses z_aptos_tmp=default  
